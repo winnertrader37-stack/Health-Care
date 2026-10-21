@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Naol Health Doctor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+:root{--g:rgba(10,20,32,.78);--b:rgba(255,255,255,.13);--t:#eaf6f6;--a:#19e6c1;--r:#ff4d6d}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans Ethiopic",sans-serif;color:var(--t);background:radial-gradient(ellipse at 50% 35%,#16424d 0%,#0a1b2b 55%,#050b14 100%)}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.glass{background:var(--g);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--b);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+/* top bar */
+#top{position:absolute;left:10px;right:10px;top:max(10px,env(safe-area-inset-top));z-index:6;display:flex;align-items:center;gap:12px;padding:8px 12px;animation:drop .8s ease both}
+.brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--a),#2b8cff);display:grid;place-items:center;font-size:22px;font-weight:900;color:#fff;animation:beat 1.3s infinite}
+.brand b{font-size:18px;background:linear-gradient(90deg,#fff,var(--a));-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+.brand small{display:block;font-size:11px;opacity:.7}
+#tabs{display:flex;gap:6px;flex:1;overflow-x:auto;scrollbar-width:none;justify-content:center}
+#tabs button,#langs button{background:rgba(255,255,255,.07);border:1px solid var(--b);color:var(--t);padding:8px 12px;border-radius:11px;font-size:14px;cursor:pointer;white-space:nowrap;transition:.2s}
+#tabs button.on,#langs button.on{background:var(--a);border-color:var(--a);color:#032;font-weight:700}
+#langs{display:flex;gap:4px;flex-shrink:0}#langs button{padding:8px 10px;font-size:13px}
+/* panel */
+#panel{position:absolute;right:10px;top:calc(max(10px,env(safe-area-inset-top)) + 64px);bottom:12px;width:330px;z-index:5;overflow:auto;padding:14px;animation:slide .9s ease both}
+#panel h3{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--a);margin:16px 0 8px}#panel h3:first-child{margin-top:0}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:rgba(255,255,255,.07);border:1px solid var(--b);color:var(--t);padding:7px 11px;border-radius:10px;font-size:13px;cursor:pointer;transition:.2s}
+.chip:hover{background:rgba(255,255,255,.18)}.chip.on{background:var(--a);border-color:var(--a);color:#032;font-weight:600}
+.chip i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.sw{display:flex;align-items:center;justify-content:space-between;font-size:14px;padding:5px 0}
+.sw input[type=checkbox]{accent-color:var(--a);width:18px;height:18px}
+.sl{font-size:13px;margin-top:8px;display:flex;justify-content:space-between}
+input[type=range]{width:100%;accent-color:var(--a)}
+#search{width:100%;margin-bottom:8px;background:rgba(255,255,255,.08);border:1px solid var(--b);border-radius:10px;padding:10px;color:var(--t);font-size:14px;outline:none}
+#plist .grp{font-size:11px;opacity:.6;margin:10px 0 4px;text-transform:uppercase}
+#plist button{display:flex;width:100%;align-items:center;gap:8px;text-align:left;background:rgba(255,255,255,.05);border:1px solid transparent;color:var(--t);padding:9px 10px;border-radius:9px;font-size:14px;cursor:pointer;margin-bottom:3px}
+#plist button:hover,#plist button.on{border-color:var(--a);background:rgba(25,230,193,.15)}
+#plist i{width:11px;height:11px;border-radius:4px;flex-shrink:0}
+/* info card */
+#info{position:absolute;left:10px;bottom:12px;width:350px;max-height:46%;overflow:auto;z-index:4;padding:16px;display:none}
+#info.show{display:block;animation:rise .4s ease both}
+#info .x{position:absolute;right:10px;top:8px;background:none;border:0;color:var(--t);font-size:18px;cursor:pointer}
+#info .ih{display:flex;align-items:center;gap:9px;font-size:20px}#info .ih i{width:14px;height:14px;border-radius:5px}
+#info .on{font-size:12px;opacity:.7;margin:3px 0 8px}
+#info p{font-size:14.5px;line-height:1.55}
+#info .al{margin-top:8px;font-size:13px;opacity:.85;line-height:1.5;border-top:1px solid var(--b);padding-top:8px}
+#info .al b{color:var(--a)}
+#tip{position:fixed;z-index:9;pointer-events:none;background:rgba(0,0,0,.8);color:#fff;font-size:13px;padding:5px 10px;border-radius:8px;display:none}
+#zb{position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;gap:8px}
+#zb button{width:44px;height:44px;border-radius:12px;font-size:20px;color:var(--t);cursor:pointer;border:1px solid var(--b)}
+#quiz{position:absolute;left:50%;transform:translateX(-50%);top:calc(max(10px,env(safe-area-inset-top)) + 64px);z-index:6;padding:12px 18px;font-size:16px;display:none;text-align:center;max-width:92%}
+#quiz.show{display:block;animation:drop .4s ease both}#quiz b{color:var(--a)}
+#toast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);z-index:8;padding:14px 22px;font-size:18px;opacity:0;pointer-events:none;transition:.35s;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#tog{display:none;position:absolute;right:10px;bottom:12px;z-index:7;padding:12px 16px;font-size:18px;color:#fff;cursor:pointer;border:1px solid var(--b)}
+@keyframes drop{from{opacity:0;transform:translateY(-16px)}}@keyframes slide{from{opacity:0;transform:translateX(40px)}}@keyframes rise{from{opacity:0;transform:translateY(20px)}}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.15)}30%{transform:scale(1)}45%{transform:scale(1.1)}}
+@media(max-width:900px){
+ #top{flex-wrap:wrap;gap:6px;padding:8px}.brand{flex:1}#tabs{order:3;flex-basis:100%;justify-content:flex-start}
+ #panel{top:auto;left:10px;right:10px;width:auto;max-height:58%;bottom:0;border-radius:18px 18px 0 0;transform:translateY(110%);transition:transform .4s;animation:none}
+ #panel.open{transform:none}
+ #tog{display:block}#info{left:10px;right:10px;width:auto;bottom:70px;max-height:36%}
+ #zb{top:auto;bottom:70px;transform:none;flex-direction:row;left:auto;right:10px}#zb button{width:40px;height:40px}
+ #quiz{top:calc(max(10px,env(safe-area-inset-top)) + 112px);font-size:14px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="top" class="glass">
+ <div class="brand"><div class="logo">✚</div><div><b>Naol Health Doctor</b><small data-i="sub"></small></div></div>
+ <div id="tabs"></div>
+ <div id="langs"><button data-l="0">OM</button><button data-l="1">አማ</button><button data-l="2">EN</button></div>
+</div>
+<div id="zb">
+ <button class="glass" id="zin">＋</button><button class="glass" id="zout">－</button>
+ <button class="glass" id="home">⟲</button><button class="glass" id="fs">⛶</button>
+</div>
+<div id="quiz" class="glass"></div>
+<div id="toast" class="glass"></div>
+<div id="tip"></div>
+<div id="info" class="glass"></div>
+<button id="tog" class="glass">☰</button>
+
+<div id="panel" class="glass">
+ <h3 data-i="layers"></h3>
+ <div class="row" id="presets"></div>
+ <div class="row" id="layers" style="margin-top:8px"></div>
+
+ <h3 data-i="view"></h3>
+ <div class="sl"><span data-i="skinop"></span><span id="sov">25</span></div><input type="range" id="skinop" min="0" max="100" value="25">
+ <div class="sl"><span data-i="explode"></span></div><input type="range" id="ex" min="0" max="100" value="0">
+ <div class="sl"><span data-i="cut"></span></div><input type="range" id="cut" min="0" max="100" value="0">
+ <label class="sw"><span data-i="xray"></span><input type="checkbox" id="xray"></label>
+ <label class="sw"><span data-i="iso"></span><input type="checkbox" id="iso"></label>
+
+ <h3 data-i="anim"></h3>
+ <label class="sw"><span data-i="heart"></span><input type="checkbox" id="beat" checked></label>
+ <label class="sw"><span data-i="breath"></span><input type="checkbox" id="breath" checked></label>
+ <label class="sw"><span data-i="flow"></span><input type="checkbox" id="flow"></label>
+ <label class="sw"><span data-i="rot"></span><input type="checkbox" id="rot"></label>
+ <div class="row" style="margin-top:8px"><button class="chip" id="quizbtn">🎯 <span data-i="quiz"></span></button></div>
+
+ <h3 data-i="parts"></h3>
+ <input id="search" autocomplete="off">
+ <div id="plist"></div>
+</div>
+
+<script>
+const T=THREE,$=s=>document.querySelector(s);
+/* =====================================================
+   KUTAA 1: DAATAA (maqaa fi ibsa — Oromo | አማርኛ | English)
+   ===================================================== */
+const p=(a,b,c,d,e,f)=>[[a,b,c],[d,e,f]];
+const D={
+human:{
+skin:p(`Gogaa`,`ቆዳ`,`Skin`,`Gogaan qaama keenya hunda uwwisa; qaama ittisa, hoo'a to'ata, tuqaa fi dhukkubbii dhaga'a.`,`ቆዳ መላውን አካል ይሸፍናል፤ ከበሽታ ይከላከላል፣ ሙቀትን ይቆጣጠራል፣ ንክኪና ህመም ይሰማል።`,`Skin covers the whole body; it protects, regulates temperature and senses touch and pain.`),
+skull:p(`Lafee mataa`,`የራስ ቅል`,`Skull`,`Lafee mataa sammuu eega; lafee 22 qaba.`,`የራስ ቅል አንጎልን ይጠብቃል፤ 22 አጥንቶች አሉት።`,`The skull protects the brain; it is made of 22 bones.`),
+spine:p(`Lafee dugdaa`,`አከርካሪ`,`Spine`,`Lafee dugdaa (vertebrae) 33 qaba; qaama dhaabbachiisa, sararoota narvii eega.`,`አከርካሪ 33 አጥንቶች አሉት፤ አካልን ደግፎ የአከርካሪ ነርቭን ይጠብቃል።`,`The spine has 33 vertebrae; it supports the body and protects the spinal cord.`),
+ribs:p(`Lafee cinaa (Ribs)`,`የጎድን አጥንት`,`Rib cage`,`Lafee cinaa 12 bocoo bocoo; onnee fi sombaa eega.`,`12 ጥንድ የጎድን አጥንቶች ልብና ሳንባን ይጠብቃሉ።`,`12 pairs of ribs protect the heart and lungs.`),
+pelvis:p(`Lafee mudhii (Pelvis)`,`ዳሌ`,`Pelvis`,`Lafee mudhii ulfaatina qaamaa baata; miila fi qaama gubbaa wal hidha.`,`ዳሌ የሰውነትን ክብደት ይሸከማል፤ እግሮችን ከግንድ አካል ያገናኛል።`,`The pelvis bears body weight and connects the legs to the trunk.`),
+armbones:p(`Lafee harkaa`,`የእጅ አጥንቶች`,`Arm bones`,`Humerus, radius fi ulna: harka sochoosuu fi qabachuuf nu gargaaru.`,`ሂውመረስ፣ ራዲየስና ኡልና እጅን ለእንቅስቃሴና ለመያዝ ይረዳሉ።`,`Humerus, radius and ulna let the arm move and grasp.`),
+legbones:p(`Lafee miilaa`,`የእግር አጥንቶች`,`Leg bones`,`Femur lafee qaama keessaa isa dheeraa fi cimaadha; tibia fi fibula jilba jalaa jiru.`,`ፌመር (የጭን አጥንት) በሰውነት ውስጥ ረጅሙና ጠንካራው አጥንት ነው።`,`The femur is the longest, strongest bone in the body.`),
+pect:p(`Foon laphee (Pectoral)`,`የደረት ጡንቻ`,`Pectoral muscles`,`Harka fuullee fi gara qaamaatti harkisuuf gargaara.`,`ክንድን ወደ ፊትና ወደ ሰውነት ለመሳብ ይረዳል።`,`Pulls the arm forward and toward the body.`),
+delt:p(`Foon gateettii (Deltoid)`,`የትከሻ ጡንቻ`,`Deltoid`,`Harka ol kaasuuf gargaara; gateettii bifa kenna.`,`ክንድን ለማንሳት ይረዳል፤ ለትከሻ ቅርጽ ይሰጣል።`,`Raises the arm and shapes the shoulder.`),
+armM:p(`Foon harkaa`,`የክንድ ጡንቻ`,`Arm muscles`,`Biceps harka muruu, triceps immoo diriirsuuf hojjata.`,`ባይሴፕስ ክንድን ያጥፋል፣ ትራይሴፕስ ያቃናል።`,`Biceps bends the elbow; triceps straightens it.`),
+abs:p(`Foon garaa`,`የሆድ ጡንቻ`,`Abdominal muscles`,`Qaama dugdaa deeggara; hafuuraa fi ol kaasuu irratti gargaara.`,`አካልን ይደግፋል፤ በመተንፈስና በማንሳት ይረዳል።`,`Supports the trunk and helps with breathing and lifting.`),
+back:p(`Foon dugdaa`,`የጀርባ ጡንቻ`,`Back muscles`,`Trapezius fi latissimus dugda dhaabbachiisu, harka duubatti harkisu.`,`ትራፔዚየስና ላቲሲመስ አከርካሪን ያቆማሉ፣ ክንድን ወደ ኋላ ይስባሉ።`,`Trapezius and latissimus hold the spine upright and pull the arm back.`),
+glute:p(`Foon mudhii duubaa (Gluteus)`,`የሰገላ ጡንቻ`,`Gluteal muscles`,`Foon qaama keessaa isa guddaa; dhaabachuu fi adeemuuf barbaachisaadha.`,`በሰውነት ትልቁ ጡንቻ ነው፤ ለመቆምና ለመራመድ ወሳኝ ነው።`,`The body's largest muscle group; key for standing and walking.`),
+quads:p(`Foon ciisaa`,`የጭን ጡንቻ`,`Thigh muscles`,`Quadriceps jilba diriirsa; hamstring jilba muda.`,`ኳድሪሴፕስ ጉልበትን ያቃናል፣ ሃምስትሪንግ ያጥፋል።`,`Quadriceps straightens the knee; hamstrings bend it.`),
+calves:p(`Foon kuusaa miilaa`,`የታችኛው እግር ጡንቻ`,`Calf muscles`,`Kottoonfachuu, fiiguu fi utaaluuf gargaara.`,`ተረከዝን ለማንሳት፣ ለመሮጥና ለመዝለል ይረዳል።`,`Lifts the heel; essential for walking, running and jumping.`),
+brain:p(`Sammuu`,`አንጎል`,`Brain`,`Sammuun yaada, yaadannoo fi qaama hunda to'ata; neuroonii biliyoona 86 ta'a qaba.`,`አንጎል አስተሳሰብን፣ ትውስታንና መላ አካልን ይቆጣጠራል፤ 86 ቢሊዮን ያህል ነርቮች አሉት።`,`The brain controls thought, memory and the whole body; about 86 billion neurons.`),
+heart:p(`Onnee`,`ልብ`,`Heart`,`Onnee dhiiga qaama hundatti dhiibaa; daqiiqaatti altokko 60–100 rukuta.`,`ልብ ደምን ወደ መላ አካል ይረጫል፤ በደቂቃ ከ60 እስከ 100 ጊዜ ይመታል።`,`The heart pumps blood to the whole body, beating 60–100 times a minute.`),
+lungs:p(`Sombaa`,`ሳንባ`,`Lungs`,`Sombaan ikkisjiinii dhiigatti galchee kaarboon daayoksaayidii baasa.`,`ሳንባ ኦክስጅንን ወደ ደም ያስገባል፣ ካርቦን ዳይኦክሳይድንም ያስወጣል።`,`The lungs take oxygen into the blood and remove carbon dioxide.`),
+trachea:p(`Ujummoo hafuuraa`,`የመተንፈሻ ቧንቧ`,`Trachea (windpipe)`,`Qilleensa afaan fi funyaan irraa gara sombaatti geessa.`,`አየርን ከአፍና አፍንጫ ወደ ሳንባ ያደርሳል።`,`Carries air from the mouth and nose to the lungs.`),
+liver:p(`Tiruu (Liver)`,`ጉበት`,`Liver`,`Tiruun summii qaama keessaa baasa, bile hojjata, soorata kuusa.`,`ጉበት መርዝን ያጣራል፣ ሐሞትን ያመርታል፣ ንጥረ ነገሮችን ያከማቻል።`,`The liver filters toxins, makes bile and stores nutrients.`),
+stomach:p(`Garaa (Stomach)`,`ጨጓራ`,`Stomach`,`Garaan nyaata asiidii fi sochii foonii dhaan caccabsa.`,`ጨጓራ ምግብን በአሲድና በጡንቻ እንቅስቃሴ ይፈጫል።`,`The stomach breaks food down with acid and muscle contractions.`),
+kidneys:p(`Kalee`,`ኩላሊት`,`Kidneys`,`Kaleen dhiiga qulqulleessa, fincaan hojjata.`,`ኩላሊት ደምን ያጣራል፣ ሽንትንም ያመርታል።`,`The kidneys filter blood and make urine.`),
+smallInt:p(`Handhuura xiqqaa`,`ትንሹ አንጀት`,`Small intestine`,`Meetira 6 ol dheeraa; nyaata keessaa soorata fudhata.`,`ከ6 ሜትር በላይ ርዝመት አለው፤ ከምግብ ንጥረ ነገሮችን ይወስዳል።`,`Over 6 m long; absorbs most nutrients from food.`),
+largeInt:p(`Handhuura guddaa`,`ትልቁ አንጀት`,`Large intestine`,`Bishaan fudhatee kosii (stool) uuma.`,`ውሃን ይወስዳል፣ ቆሻሻን (ሰገራ) ይፈጥራል።`,`Absorbs water and forms stool.`),
+bladder:p(`Fincaan qabaa (Bladder)`,`ፊኛ`,`Bladder`,`Fincaan kaleerraa dhufu qabata.`,`ከኩላሊት የሚመጣን ሽንት ያከማቻል።`,`Stores urine from the kidneys.`),
+arteries:p(`Hidda dhiigaa (Arteries)`,`ደም ወሳጅ ቧንቧ`,`Arteries`,`Dhiiga ikkisjiinii qabu onnee irraa qaama hundatti geessu.`,`ኦክስጅን ያለው ደምን ከልብ ወደ አካል ያደርሳሉ።`,`Carry oxygen-rich blood from the heart to the body.`),
+veins:p(`Hidda dhiigaa deebii (Veins)`,`ደም መላሽ ቧንቧ`,`Veins`,`Dhiiga ikkisjiinii hin qabne gara onneetti deebisu.`,`ኦክስጅን የሌለው ደምን ወደ ልብ ይመልሳሉ።`,`Return oxygen-poor blood to the heart.`),
+nerves:p(`Narvii (Hidda sammuu)`,`ነርቮች`,`Nerves & spinal cord`,`Ergaa sammuu irraa gara qaamaatti, qaama irraa gara sammuutti geessu.`,`መልዕክትን ከአንጎል ወደ አካል፣ ከአካል ወደ አንጎል ያደርሳሉ።`,`Carry signals between the brain and the body.`)
+},
+bird:{
+skin:p(`Baala fi gogaa`,`ላባና ቆዳ`,`Feathers & skin`,`Baalli qaama ho'aa taasisa, duuluuf gargaara.`,`ላባ ሙቀት ይጠብቃል፣ ለመብረርም ይረዳል።`,`Feathers insulate the body and enable flight.`),
+wings:p(`Qoochoo`,`ክንፍ`,`Wings`,`Qoochoon qilleensa keessa ol-ba'uuf gargaara.`,`ክንፎች አየር ውስጥ ለመብረር ያገለግላሉ።`,`Wings generate lift for flying.`),
+beak:p(`Afaan simbirroo (Beak)`,`ምንቃር`,`Beak`,`Afaan simbirroo nyaata qabuu fi cabsuuf; ilkaan hin qabu.`,`ምንቃር ምግብን ለመያዝና ለመስበር ያገለግላል፤ ጥርስ የለውም።`,`The beak grabs and breaks food; birds have no teeth.`),
+skeleton:p(`Lafee simbirroo`,`የወፍ አጥንት`,`Skeleton`,`Lafeen isaa salphaa fi duwwaadha, kanaaf duuluuf mijataadha.`,`አጥንቶቹ ቀላልና ክፍት ናቸው፤ ለመብረር ይመቻሉ።`,`Hollow, lightweight bones make flight easier.`),
+flightM:p(`Foon duulaa`,`የበረራ ጡንቻ`,`Flight muscles`,`Foon laphee guddaan qoochoo rukutuuf humna kenna.`,`ትላልቅ የደረት ጡንቻዎች ክንፍን ለማርገብገብ ኃይል ይሰጣሉ።`,`Large breast muscles power the wing beats.`),
+heart:p(`Onnee`,`ልብ`,`Heart`,`Onnee simbirrootaa saffisaan rukuta; daqiiqaatti 300 ol.`,`የወፍ ልብ በፍጥነት ይመታል፤ በደቂቃ ከ300 በላይ።`,`A bird's heart beats very fast, often over 300 times a minute.`),
+lungs:p(`Sombaa`,`ሳንባ`,`Lungs`,`Sombaan simbirroo kuusaa qilleensaa wajjin hojjata.`,`ሳንባው ከአየር ከረጢቶች ጋር ይሰራል።`,`Lungs work with air sacs for efficient breathing.`),
+gizzard:p(`Gizzard (garaa cabsaa)`,`ሁለተኛ ሆድ (ጊዛርድ)`,`Gizzard`,`Dhagaa xixiqqaadhaan nyaata cabsa.`,`ትናንሽ ድንጋዮችን በመጠቀም ምግብን ይፈጫል።`,`Grinds food using small stones.`)
+},
+cow:{
+skin:p(`Gogaa fi rifeensa`,`ቆዳና ጸጉር`,`Skin & hair`,`Gogaan fi rifeensi qaama ittisa, hoo'a eegu.`,`ቆዳና ጸጉር አካልን ይከላከላሉ፣ ሙቀት ይጠብቃሉ።`,`Skin and hair protect the body and hold warmth.`),
+skeleton:p(`Lafee Sa'aa`,`የላም አጥንት`,`Skeleton`,`Lafee 200 ol qaba; qaama guddaa deeggara.`,`ከ200 በላይ አጥንቶች አካልን ይደግፋሉ።`,`Over 200 bones support the body.`),
+horns:p(`Gaanfa`,`ቀንድ`,`Horns`,`Gaanfi ittisa fi wal-ta'insa keessatti fayyada.`,`ቀንዶች ለመከላከልና ለመግባባት ያገለግላሉ።`,`Horns are used for defense and social display.`),
+muscle:p(`Foon`,`ጡንቻ`,`Muscles`,`Foon jabaan sochii fi baasii ulfaataa ni danda'a.`,`ጠንካራ ጡንቻዎች እንቅስቃሴና ክብደት መሸከምን ያስችላሉ።`,`Strong muscles enable movement and carrying weight.`),
+heart:p(`Onnee`,`ልብ`,`Heart`,`Onnee dhiiga qaama guddaa keessa dhiibaa.`,`ልብ ደምን በትልቁ አካል ያሰራጫል።`,`The heart circulates blood through the large body.`),
+lungs:p(`Sombaa`,`ሳንባ`,`Lungs`,`Sombaan qilleensa fudhatee dhiiga ikkisjiinii guuta.`,`ሳንባ አየር ወስዶ ደምን በኦክስጅን ይሞላል።`,`Lungs bring oxygen into the blood.`),
+rumen:p(`Garaa guddaa (Rumen)`,`ሆድ (ሩመን)`,`Rumen (4-chamber stomach)`,`Garaan saawwaa kutaa afur qaba; margi baakteeriyaan ni caccaba.`,`የላም ሆድ አራት ክፍሎች አሉት፤ ሳር በባክቴሪያ ይፈጫል።`,`A cow's stomach has four chambers; bacteria ferment grass.`)
+},
+elephant:{
+skin:p(`Gogaa`,`ቆዳ`,`Skin`,`Gogaan arbaa hanga 2.5 cm furdaadha.`,`የዝሆን ቆዳ እስከ 2.5 ሴ.ሜ ወፍራም ነው።`,`Elephant skin is up to 2.5 cm thick.`),
+skeleton:p(`Lafee arbaa`,`የዝሆን አጥንት`,`Skeleton`,`Lafeen ulfaataan qaama guddaa baata.`,`ከባድ አጥንቶች ግዙፍ አካልን ይሸከማሉ።`,`Heavy bones carry its huge body.`),
+trunk:p(`Funyaan (Trunk)`,`አፍንጫ (ግንድ)`,`Trunk`,`Funyaan foon 40,000 ol qaba; dhugaa fi qabuuf gargaara.`,`ግንዱ ከ40,000 በላይ ጡንቻዎች አሉት፤ ለመጠጣትና ለመያዝ ያገለግላል።`,`The trunk has about 40,000 muscles for drinking and grasping.`),
+tusks:p(`Ilkaan dheeraa (Tusks)`,`ክራንቻ`,`Tusks`,`Ilkaan dheeraan kun ilkaan fuulduraa dheerate.`,`ክራንቻዎች የረዘሙ የፊት ጥርሶች ናቸው።`,`Tusks are elongated incisor teeth.`),
+brain:p(`Sammuu`,`አንጎል`,`Brain`,`Sammuun arbaa ~5 kg ulfaata; yaadannoo cimaa qaba.`,`የዝሆን አንጎል ወደ 5 ኪ.ግ ይመዝናል፤ ትውስታው ጠንካራ ነው።`,`The brain weighs about 5 kg; elephants have excellent memory.`),
+heart:p(`Onnee`,`ልብ`,`Heart`,`Onnee ~20 kg ulfaata; daqiiqaatti ~30 rukuta.`,`ልብ ወደ 20 ኪ.ግ ይመዝናል፤ በደቂቃ ~30 ጊዜ ይመታል።`,`The heart weighs ~20 kg and beats ~30 times a minute.`),
+lungs:p(`Sombaa`,`ሳንባ`,`Lungs`,`Bishaan keessatti funyaan akka ujummoo itti fayyadama.`,`በውሃ ውስጥ ግንዱን እንደ ቱቦ ይጠቀማል።`,`Elephants can use the trunk as a snorkel in water.`)
+}};
+const MODELS={human:['🧍',`Qaama Namaa`,`የሰው አካል`,`Human`],bird:['🐦',`Simbirroo`,`ወፍ`,`Bird`],cow:['🐄',`Sa'a`,`ላም`,`Cow`],elephant:['🐘',`Arbaa`,`ዝሆን`,`Elephant`]};
+const LY={skin:[`Gogaa`,`ቆዳ`,`Skin`],muscle:[`Foon`,`ጡንቻ`,`Muscles`],bone:[`Lafee`,`አጥንት`,`Bones`],organ:[`Qaama keessaa`,`የውስጥ አካል`,`Organs`],vessel:[`Hidda dhiigaa`,`ደም ሥር`,`Vessels`],nerve:[`Narvii`,`ነርቭ`,`Nerves`]};
+const UI={
+sub:[`Barnoota qaama 3D`,`3D የአካል ትምህርት`,`3D Anatomy Learning`],layers:[`Kutaalee (Layers)`,`ንብርብሮች`,`Layers`],view:[`Agarsiisa`,`እይታ`,`Display`],
+skinop:[`Gogaa ifaa (%)`,`የቆዳ ግልጽነት`,`Skin opacity`],explode:[`Calaqqisiisi (Explode)`,`ክፍሎችን ለይ`,`Explode`],cut:[`Kutaa (Cross-section)`,`መቁረጥ`,`Cross-section`],
+xray:[`X-ray`,`ኤክስሬይ`,`X-ray`],iso:[`Kan filatame qofa`,`የተመረጠውን ብቻ`,`Isolate selected`],anim:[`Animeeshiinii`,`እንቅስቃሴ`,`Animation`],
+heart:[`Rukuta onnee`,`የልብ ትርታ`,`Heartbeat`],breath:[`Hafuura`,`መተንፈስ`,`Breathing`],flow:[`Dhiiga yaa'u`,`የደም ፍሰት`,`Blood flow`],rot:[`Of-naannessuu`,`ራስ-ሰር ማሽከርከር`,`Auto-rotate`],
+parts:[`Qaamolee`,`የአካል ክፍሎች`,`Parts`],search:[`🔍 Barbaadi...`,`🔍 ፈልግ...`,`🔍 Search...`],quiz:[`Qormaata`,`ፈተና`,`Quiz`],
+all:[`🌐 Afaan hunda`,`🌐 ሁሉም ቋንቋ`,`🌐 All languages`],where:[`Eessa jira?`,`የት ነው?`,`Where is`],ok:[`✅ Sirrii!`,`✅ ትክክል!`,`✅ Correct!`],no:[`❌ Kun`,`❌ ይህ`,`❌ That is`],
+pAll:[`Hunda`,`ሁሉም`,`All`],pMus:[`Foon`,`ጡንቻ`,`Muscles`],pSke:[`Lafee`,`አጥንት`,`Skeleton`],pOrg:[`Qaama keessaa`,`የውስጥ አካል`,`Organs`]
+};
+const SYS=['skin','muscle','bone','organ','vessel','nerve'];
+
+/* =====================================================
+   KUTAA 2: THREE.JS — scene, ibsaa, lafa
+   ===================================================== */
+const cv=$('#c'),renderer=new T.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.localClippingEnabled=true;renderer.outputEncoding=T.sRGBEncoding;
+const scene=new T.Scene(),camera=new T.PerspectiveCamera(38,1,.1,600);
+const controls=new T.OrbitControls(camera,cv);
+Object.assign(controls,{enableDamping:true,dampingFactor:.08,minDistance:1.5,maxDistance:70,zoomSpeed:1.2,screenSpacePanning:true,autoRotateSpeed:1.6});
+scene.add(new T.HemisphereLight(0xffffff,0x2a4455,.95));
+const dl=new T.DirectionalLight(0xffffff,.95);dl.position.set(8,18,12);scene.add(dl);
+const dl2=new T.DirectionalLight(0x66ffee,.45);dl2.position.set(-10,6,-9);scene.add(dl2);
+const floor=new T.Group();scene.add(floor);
+const fd=new T.Mesh(new T.CircleGeometry(1,64),new T.MeshBasicMaterial({color:0x0d2a36,transparent:true,opacity:.7}));
+const fr=new T.Mesh(new T.RingGeometry(.96,1,96),new T.MeshBasicMaterial({color:0x19e6c1,transparent:true,opacity:.8,side:2}));
+const fr2=new T.Mesh(new T.RingGeometry(.6,.61,96),new T.MeshBasicMaterial({color:0x19e6c1,transparent:true,opacity:.35,side:2}));
+[fd,fr,fr2].forEach(m=>{m.rotation.x=-Math.PI/2;floor.add(m)});
+function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+
+/* =====================================================
+   KUTAA 3: Meeshaalee ijaaruu (helpers)
+   ===================================================== */
+const COL={skin:0xe3ad8f,bone:0xf1e9d6,muscle:0xc0443c,organ:0xe88a8a,vessel:0xd62828,nerve:0xffcf33};
+const clip=new T.Plane(new T.Vector3(0,0,-1),999),G=new T.Group(),SG=new T.SphereGeometry(1,28,20);scene.add(G);
+let cur=null;
+function mk(id,sys,geo,pos,col,rot,sc){
+ const mat=new T.MeshStandardMaterial({color:col??COL[sys],roughness:.5,metalness:.05,clippingPlanes:[clip],side:T.DoubleSide});
+ const m=new T.Mesh(geo,mat);m.position.set(...pos);if(rot)m.rotation.set(...rot);if(sc)m.scale.set(...sc);
+ m.userData={id,sys,base:m.position.clone(),s0:m.scale.clone()};
+ G.add(m);(cur.parts[id]??={sys,ms:[]}).ms.push(m);cur.all.push(m);return m}
+const E=(id,sys,p,r,c,rot)=>mk(id,sys,SG,p,c,rot,r);
+const V=a=>new T.Vector3(...a);
+function cy(id,sys,a,b,r1,r2,c){const A=V(a),B=V(b),d=B.clone().sub(A),m=mk(id,sys,new T.CylinderGeometry(r2,r1,d.length(),14,1),A.clone().add(B).multiplyScalar(.5).toArray(),c);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return m}
+function tb(id,sys,pts,r,c){const cu=new T.CatmullRomCurve3(pts.map(V));mk(id,sys,new T.TubeGeometry(cu,Math.max(24,pts.length*14),r,8,false),[0,0,0],c);return cu}
+const m2=f=>[1,-1].forEach(f);
+const ringV=(id,sys,y,z,rx,ry,c)=>mk(id,sys,new T.TorusGeometry(1,.05,6,28,Math.PI*1.5),[0,y,z],c,[0,0,-Math.PI*.25],[rx,ry,1]);
+
+/* =====================================================
+   KUTAA 4: MODELOOTA — Namaa, Simbirroo, Sa'a, Arbaa
+   ===================================================== */
+const B={};
+B.human=()=>{
+ /* gogaa */
+ E('skin','skin',[0,16.1,0],[.88,1.08,.98]);cy('skin','skin',[0,15.5,0],[0,14.4,0],.4,.46);
+ E('skin','skin',[0,12.3,0],[1.5,2.4,.95]);E('skin','skin',[0,10,0],[1.25,1.4,.85]);E('skin','skin',[0,8.6,0],[1.35,.9,.9]);
+ m2(s=>{cy('skin','skin',[s*1.65,14,0],[s*2.05,11.2,0],.5,.38);cy('skin','skin',[s*2.05,11.2,0],[s*2.35,8.6,.05],.38,.26);E('skin','skin',[s*2.4,8.1,.05],[.26,.46,.16]);
+  cy('skin','skin',[s*.7,8.8,0],[s*.78,4.8,.05],.78,.52);cy('skin','skin',[s*.78,4.8,.05],[s*.72,.9,0],.5,.3);E('skin','skin',[s*.72,.38,.4],[.34,.24,.72])});
+ /* lafee */
+ E('skull','bone',[0,16.25,-.03],[.8,.98,.9]);E('skull','bone',[0,15.45,.35],[.5,.3,.45]);
+ for(let i=0;i<24;i++)E('spine','bone',[0,15-i*.235,-.38-.1*Math.sin(i*.27)],[.2,.11,.2]);
+ for(let i=0;i<10;i++){const y=14.1-i*.34,k=Math.sin((i+1)/11*Math.PI),rx=.7+.4*k,rz=.45+.2*k,pts=[];
+  for(let j=0;j<=26;j++){const a=.35+j/26*(Math.PI*2-.7);pts.push([rx*Math.sin(a),y-.2*Math.max(0,Math.cos(a)),.08+rz*Math.cos(a)])}tb('ribs','bone',pts,.04)}
+ E('ribs','bone',[0,13.2,.64],[.14,.95,.07]);m2(s=>cy('ribs','bone',[s*.1,14.3,.45],[s*1.5,14.1,.1],.07,.07));
+ m2(s=>E('pelvis','bone',[s*.72,9.3,-.02],[.5,.6,.3]));E('pelvis','bone',[0,8.9,-.35],[.4,.5,.2]);E('pelvis','bone',[0,8.3,.45],[.5,.15,.12]);
+ m2(s=>{cy('armbones','bone',[s*1.62,14,0],[s*1.98,11.2,0],.13,.11);E('armbones','bone',[s*1.98,11.2,0],[.14,.14,.14]);cy('armbones','bone',[s*1.98,11.2,0],[s*2.3,8.7,.05],.09,.07);E('armbones','bone',[s*2.38,8.2,.05],[.2,.4,.1])});
+ m2(s=>{cy('legbones','bone',[s*.65,8.8,0],[s*.75,4.8,.03],.17,.15);E('legbones','bone',[s*.75,4.8,.06],[.2,.2,.2]);cy('legbones','bone',[s*.75,4.8,0],[s*.72,.9,0],.12,.1);E('legbones','bone',[s*.72,.4,.4],[.22,.18,.6])});
+ /* foon */
+ m2(s=>{E('pect','muscle',[s*.62,13.3,.55],[.65,.5,.2]);E('delt','muscle',[s*1.7,14,.02],[.36,.5,.36]);
+  E('armM','muscle',[s*1.82,12.6,.18],[.22,.75,.22]);E('armM','muscle',[s*1.82,12.6,-.18],[.2,.7,.2]);E('armM','muscle',[s*2.1,10,0],[.2,.85,.2]);
+  for(let k=0;k<3;k++)E('abs','muscle',[s*.22,11.8-k*.55,.72],[.2,.25,.1]);E('abs','muscle',[s*.75,10.5,.5],[.3,.9,.2]);
+  E('back','muscle',[s*.65,11.8,-.65],[.5,1.2,.14]);E('glute','muscle',[s*.55,8.8,-.55],[.55,.55,.4]);
+  E('quads','muscle',[s*.72,6.9,.25],[.4,1.5,.36]);E('quads','muscle',[s*.72,6.9,-.25],[.36,1.4,.3]);
+  E('calves','muscle',[s*.74,3,-.2],[.3,1.05,.3]);E('calves','muscle',[s*.72,3,.18],[.2,1,.2])});
+ E('back','muscle',[0,13.8,-.62],[1.15,.8,.15]);
+ /* qaama keessaa */
+ E('brain','organ',[0,16.35,-.05],[.66,.58,.76],0xf0a6b4);E('heart','organ',[.22,12.4,.32],[.32,.4,.3],0xc2273d);
+ m2(s=>E('lungs','organ',[s*.6,12.9,0],[s>0?.52:.6,1.05,.5],0xe8a0a8));
+ cy('trachea','organ',[0,15,.05],[0,13.2,.05],.1,.1,0xb7d4e6);m2(s=>cy('trachea','organ',[0,13.2,.05],[s*.35,12.6,.05],.07,.06,0xb7d4e6));
+ E('liver','organ',[-.4,11.3,.3],[.85,.42,.5],0x8b3a2a);E('stomach','organ',[.42,11.2,.3],[.42,.5,.32],0xe8a08a);
+ m2(s=>E('kidneys','organ',[s*.52,10.5,-.4],[.17,.32,.15],0x7a2b3a));
+ const si=[];for(let i=0;i<=90;i++){const u=i/90*Math.PI*2;si.push([.55*Math.sin(5*u),9.9+.35*Math.sin(7*u+1),.28+.22*Math.cos(3*u)])}
+ tb('smallInt','organ',si,.09,0xe9a3a0);
+ tb('largeInt','organ',[[-.75,9,.35],[-.8,10.2,.35],[-.5,10.9,.35],[.5,10.9,.35],[.8,10.2,.35],[.75,9.3,.35],[.4,8.9,.3],[0,8.8,.2]],.12,0xd18a7a);
+ E('bladder','organ',[0,8.7,.3],[.28,.28,.28],0xe5c07a);
+ /* hidda dhiigaa */
+ cur.fa.push(tb('arteries','vessel',[[.22,12.8,.25],[.15,13.6,.1],[0,13.5,-.1],[.05,12,-.12],[.05,9.6,-.1]],.08,0xd62828));
+ m2(s=>{cur.fa.push(tb('arteries','vessel',[[.1,13.6,.1],[s*.25,14.8,.2],[s*.3,15.8,.3]],.05,0xd62828));
+  cur.fa.push(tb('arteries','vessel',[[.1,13.8,0],[s*1.4,13.7,.05],[s*1.9,11.2,.1],[s*2.3,8.7,.1]],.045,0xd62828));
+  cur.fa.push(tb('arteries','vessel',[[.05,9.6,-.1],[s*.55,8.5,.1],[s*.72,5,.15],[s*.72,.9,.1]],.06,0xd62828));
+  cur.fv.push(tb('veins','vessel',[[-.1,13.4,0],[s*.28,14.8,.1],[s*.33,15.8,.25]],.05,0x2b59d1));
+  cur.fv.push(tb('veins','vessel',[[-.1,13.5,.05],[s*1.5,13.9,.2],[s*2,11.2,.25],[s*2.35,8.7,.15]],.045,0x2b59d1));
+  cur.fv.push(tb('veins','vessel',[[-.15,9.4,-.05],[s*.65,8.4,.2],[s*.82,5,.2],[s*.8,.9,.15]],.06,0x2b59d1));
+  tb('nerves','nerve',[[0,9.4,-.5],[s*.6,8.5,-.4],[s*.7,5,-.2],[s*.7,1,0]],.035);
+  tb('nerves','nerve',[[0,14.5,-.4],[s*1.4,14,-.1],[s*1.95,11.2,0],[s*2.3,8.7,.05]],.035)});
+ cur.fv.push(tb('veins','vessel',[[-.2,9.6,-.05],[-.15,12,0],[-.15,13.2,.1]],.1,0x2b59d1));
+ tb('nerves','nerve',[[0,15.5,-.4],[0,12,-.5],[0,9.4,-.5]],.07);
+};
+B.bird=()=>{const F=0x9b6b43,W=0x7a4f2e;
+ E('skin','skin',[0,4,-.1],[.85,.8,1.3],F);E('skin','skin',[0,5.5,1.25],[.45,.45,.5],F);cy('skin','skin',[0,4.6,.8],[0,5.3,1.2],.4,.35,F);
+ for(let k=-2;k<=2;k++)E('skin','skin',[k*.22,3.8,-1.9],[.12,.05,.8],W,[0,k*.15,0]);
+ m2(s=>{E('skin','skin',[s*.3,5.6,1.5],[.07,.07,.07],0x111111);cy('skin','skin',[s*.35,3.3,.1],[s*.35,.5,.25],.08,.06,0xe0b030);E('skin','skin',[s*.35,.45,.45],[.2,.05,.35],0xe0b030);
+  E('wings','skin',[s*1.0,4.3,0],[.5,.1,.6],W);for(let k=0;k<7;k++)E('wings','skin',[s*(1.4+k*.28),4.4-k*.05,-.2-k*.12],[.16,.04,.75-k*.03],W,[0,s*.05*k,s*.08]);
+  tb('skeleton','bone',[[s*.6,4.5,.1],[s*1.6,4.7,0],[s*2.7,4.4,-.4]],.06);cy('skeleton','bone',[s*.35,3.3,.1],[s*.35,.5,.25],.05,.04);
+  for(let k=0;k<4;k++)tb('skeleton','bone',[[0,4.3,-.2+k*.25],[s*.55,4,-.2+k*.25],[s*.45,3.6,-.2+k*.25]],.03);
+  E('flightM','muscle',[s*.45,3.8,.5],[.5,.5,.75],0xa8333a);E('lungs','organ',[s*.42,4.35,.15],[.28,.38,.5],0xe8a0a8)});
+ mk('beak','skin',new T.ConeGeometry(.17,.6,12),[0,5.45,1.95],0xe8a020,[Math.PI/2,0,0]);
+ E('skeleton','bone',[0,5.55,1.25],[.32,.32,.4]);tb('skeleton','bone',[[0,5.2,1],[0,4.3,.2],[0,4,-.8],[0,3.7,-1.5]],.09);E('skeleton','bone',[0,3.35,.4],[.08,.45,.8]);
+ E('heart','organ',[0,4,.7],[.25,.3,.25],0xb3202c);E('gizzard','organ',[0,3.5,-.5],[.38,.33,.33],0x8a5a3a);
+};
+B.cow=()=>{const S=0x8a5a3a,M=0xa8423a;
+ E('skin','skin',[0,6,-.3],[1.6,1.5,3.1],S);E('skin','skin',[0,6.7,3.8],[.65,.75,1.05],S);cy('skin','skin',[0,6.3,2.5],[0,6.9,3.5],.8,.7,S);
+ tb('skin','skin',[[0,7,-3.3],[0,5,-3.7],[0,3.2,-3.6]],.09,0x6b4226);
+ m2(s=>{cy('skin','skin',[s*.9,5,1.9],[s*.9,.3,2],.38,.22,S);cy('skin','skin',[s*.95,4.8,-2.4],[s*.95,.3,-2.6],.42,.22,S);E('skin','skin',[s*.85,7.3,3.5],[.5,.14,.26],S,[0,0,s*.3]);
+  tb('horns','bone',[[s*.45,7.3,3.8],[s*1.2,8,3.7],[s*1.5,8.9,4]],.12,0xe9dfc6);
+  cy('skeleton','bone',[s*.9,5,1.9],[s*.9,.4,2],.15,.1);cy('skeleton','bone',[s*.95,4.8,-2.4],[s*.95,.4,-2.6],.17,.1);
+  E('muscle','muscle',[s,5.8,1.9],[.7,1.1,1],M);E('muscle','muscle',[s,5.6,-2.3],[.75,1.3,1],M);E('lungs','organ',[s*.6,6.3,1.3],[.5,.75,.85],0xe8a0a8)});
+ E('muscle','muscle',[0,7,0],[1,.45,2.7],M);E('muscle','muscle',[0,6.7,3],[.6,.6,.9],M);
+ tb('skeleton','bone',[[0,7.4,3],[0,7.7,.5],[0,7.2,-1.5],[0,6.9,-3.2]],.16);E('skeleton','bone',[0,6.6,3.9],[.5,.55,.95]);E('skeleton','bone',[0,6.9,-2.5],[.8,.4,.6]);
+ for(let i=0;i<12;i++){const k=1-.12*Math.abs(i-4)/4;ringV('skeleton','bone',6,2-i*.33,1.3*k,1.15*k)}
+ E('rumen','organ',[-.45,5.2,-.2],[.95,1,1.6],0x9a8a4a);E('heart','organ',[0,5.2,1.7],[.45,.55,.45],0xb3202c);
+};
+B.elephant=()=>{const S=0x8c8c8c;
+ E('skin','skin',[0,6.2,-.2],[2,2.1,3.2],S);E('skin','skin',[0,6.9,3.7],[1.3,1.55,1.2],S);tb('skin','skin',[[0,7,-3.2],[0,5.5,-3.7],[0,3.8,-3.6]],.1,0x6f6f6f);
+ m2(s=>{E('skin','skin',[s*1.6,7.2,3.1],[.15,1.4,1.1],0x9a8f88);cy('skin','skin',[s*1.2,4.4,2.2],[s*1.2,.3,2.3],.85,.7,S);cy('skin','skin',[s*1.2,4.4,-2.3],[s*1.2,.3,-2.4],.85,.7,S);
+  tb('tusks','bone',[[s*.7,5.6,4.5],[s*1,4.3,6],[s*.8,3.5,7.2]],.16,0xf3ecd8);
+  cy('skeleton','bone',[s*1.2,4.4,2.2],[s*1.2,.4,2.3],.25,.2);cy('skeleton','bone',[s*1.2,4.4,-2.3],[s*1.2,.4,-2.4],.25,.2);E('lungs','organ',[s*.8,6.5,1.4],[.6,.9,1],0xe8a0a8)});
+ tb('trunk','muscle',[[0,6,4.7],[0,4.2,5.5],[0,2.2,5.6],[0,1.2,6.2]],.5,0xa39690);
+ tb('skeleton','bone',[[0,8.1,3.2],[0,8.4,.5],[0,7.8,-1.8],[0,7.3,-3.2]],.22);E('skeleton','bone',[0,6.9,3.9],[.85,1.1,1]);E('skeleton','bone',[0,7.6,-2.4],[1.1,.5,.7]);
+ for(let i=0;i<11;i++){const k=1-.12*Math.abs(i-4)/4;ringV('skeleton','bone',6.2,2.2-i*.35,1.5*k,1.5*k)}
+ E('brain','organ',[0,7.5,3.7],[.5,.45,.55],0xf0a6b4);E('heart','organ',[0,5.4,1.9],[.6,.7,.55],0xb3202c);
+};
+
+/* =====================================================
+   KUTAA 5: Model ijaaruu, ibsaa, fi to'annoo
+   ===================================================== */
+let lang=0;try{lang=+(localStorage.getItem('nhd_l')||0)}catch(e){}
+let sel=null,iso=false,xray=false,skinOp=.25,beatOn=true,breathOn=true,flowOn=false,quiz=null,score=[0,0],allL=false,tw=null,ex=0,zr=[-1,1];
+const lay={};
+function build(name){
+ while(G.children.length){const o=G.children.pop();o.geometry&&o.geometry.dispose();o.material&&o.material.dispose()}
+ cur={name,parts:{},all:[],fa:[],fv:[]};sel=null;quiz=null;
+ G.scale.set(1,1,1);G.position.set(0,0,0);B[name]();
+ const box=new T.Box3().setFromObject(G),sz=box.getSize(new T.Vector3()),s=(name==='human'?17:15)/Math.max(sz.x,sz.y,sz.z);
+ G.scale.setScalar(s);G.updateMatrixWorld(true);const b2=new T.Box3().setFromObject(G),c=b2.getCenter(new T.Vector3());
+ G.position.set(-c.x,-b2.min.y,-c.z);G.updateMatrixWorld(true);
+ const wb=new T.Box3().setFromObject(G),ws=wb.getSize(new T.Vector3());zr=[wb.min.z,wb.max.z];
+ const gc=new T.Vector3();cur.all.forEach(m=>{m.geometry.computeBoundingBox();m.updateMatrix();m.userData.ctr=m.geometry.boundingBox.getCenter(new T.Vector3()).applyMatrix4(m.matrix);gc.add(m.userData.ctr)});
+ cur.gc=gc.divideScalar(cur.all.length);
+ /* hidda dhiigaa yaa'uu */
+ cur.fp=[[cur.fa,0xff3b3b],[cur.fv,0x3b7bff]].map(([cs,col])=>{const n=cs.length*14,g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(n*3),3));
+  const pt=new T.Points(g,new T.PointsMaterial({size:.3,color:col,transparent:true,opacity:.95,depthWrite:false}));pt.frustumCulled=false;G.add(pt);return{pt,cs,n}});
+ const fr_=Math.max(ws.x,ws.z)*.62;floor.scale.setScalar(fr_);floor.position.y=.02;
+ const h=ws.y,d=Math.max(h*1.7,ws.z*1.9,ws.x*1.9),home=name==='human'?{t:new T.Vector3(0,h*.5,0),p:new T.Vector3(0,h*.55,d)}:{t:new T.Vector3(0,h*.5,0),p:new T.Vector3(d*.7,h*.8,d*.75)};
+ cur.home=home;controls.target.copy(home.t);camera.position.copy(home.p).multiplyScalar(1.7);tw={t:home.t.clone(),p:home.p.clone()};
+ SYS.forEach(k=>lay[k]=1);if(name==='human')lay.muscle=0;skinOp=name==='human'?.25:.95;$('#skinop').value=skinOp*100;$('#sov').textContent=Math.round(skinOp*100);
+ $('#ex').value=0;$('#cut').value=0;ex=0;clip.constant=999;
+ renderAll();applyVis();
+}
+function applyVis(){
+ cur.all.forEach(m=>{const u=m.userData,mt=m.material;m.visible=!!lay[u.sys];
+  let o=u.sys==='skin'?skinOp:(xray?.4:1);if(sel&&iso&&u.id!==sel)o=Math.min(o,.08);
+  mt.opacity=o;mt.transparent=o<.99;mt.depthWrite=o>.6;
+  const on=u.id===sel;mt.emissive.setHex(on?0x138a76:0);mt.emissiveIntensity=on?.9:0});
+ const fv=flowOn&&lay.vessel&&ex<.03;cur.fp.forEach(f=>f.pt.visible=!!fv);
+ $('#layers').querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',!!lay[b.dataset.k]));
+}
+function explode(){cur.all.forEach(m=>{const u=m.userData;m.position.copy(u.base).addScaledVector(u.ctr.clone().sub(cur.gc),ex*.75)});applyVis()}
+function setPreset(k){const on={all:SYS,mus:['muscle'],ske:['bone'],org:['organ','vessel','nerve']}[k];SYS.forEach(s=>lay[s]=on.includes(s)?1:0);applyVis()}
+
+/* =====================================================
+   KUTAA 6: UI — tabs, tarree qaamolee, ibsa (info)
+   ===================================================== */
+const U=k=>UI[k][lang];
+function renderAll(){
+ document.documentElement.lang=['om','am','en'][lang];
+ document.querySelectorAll('[data-i]').forEach(e=>e.textContent=U(e.dataset.i));
+ $('#search').placeholder=U('search');
+ document.querySelectorAll('#langs button').forEach(b=>b.classList.toggle('on',+b.dataset.l===lang));
+ $('#tabs').innerHTML='';Object.entries(MODELS).forEach(([k,v])=>{const b=document.createElement('button');b.textContent=v[0]+' '+v[1+lang];b.className=cur.name===k?'on':'';b.onclick=()=>build(k);$('#tabs').appendChild(b)});
+ $('#presets').innerHTML='';[['all','pAll'],['mus','pMus'],['ske','pSke'],['org','pOrg']].forEach(([k,l])=>{const b=document.createElement('button');b.className='chip';b.textContent=U(l);b.onclick=()=>setPreset(k);$('#presets').appendChild(b)});
+ $('#layers').innerHTML='';SYS.filter(s=>cur.all.some(m=>m.userData.sys===s)).forEach(s=>{const b=document.createElement('button');b.className='chip';b.dataset.k=s;b.innerHTML=`<i style="background:#${COL[s].toString(16).padStart(6,'0')}"></i>${LY[s][lang]}`;b.onclick=()=>{lay[s]=lay[s]?0:1;applyVis()};$('#layers').appendChild(b)});
+ renderList();showInfo();showQuiz();
+}
+const hex=id=>'#'+cur.parts[id].ms[0].material.color.getHexString();
+function renderList(){
+ const q=$('#search').value.trim().toLowerCase(),L=$('#plist');L.innerHTML='';
+ SYS.forEach(s=>{const ids=Object.keys(cur.parts).filter(id=>cur.parts[id].sys===s&&(!q||D[cur.name][id][0].some(n=>n.toLowerCase().includes(q))));if(!ids.length)return;
+  const g=document.createElement('div');g.className='grp';g.textContent=LY[s][lang];L.appendChild(g);
+  ids.forEach(id=>{const b=document.createElement('button');if(id===sel)b.className='on';b.innerHTML=`<i style="background:${hex(id)}"></i>${D[cur.name][id][0][lang]}`;b.onclick=()=>{pick(id);if(innerWidth<=900)$('#panel').classList.remove('open')};L.appendChild(b)})});
+}
+function showInfo(){
+ const el=$('#info');if(!sel||quiz){el.classList.remove('show');return}
+ const d=D[cur.name][sel],o=[0,1,2].filter(i=>i!==lang).map(i=>d[0][i]).join(' • ');
+ el.innerHTML=`<button class="x" id="ix">✕</button><div class="ih"><i style="background:${hex(sel)}"></i><b>${d[0][lang]}</b></div><div class="on">${o}</div><p>${d[1][lang]}</p>
+ <button class="chip" id="al" style="margin-top:10px">${U('all')}</button>${allL?`<div class="al">${['OM','አማ','EN'].map((l,i)=>`<div><b>${l}:</b> ${d[0][i]} — ${d[1][i]}</div>`).join('')}</div>`:''}`;
+ el.classList.add('show');$('#ix').onclick=()=>select(null);$('#al').onclick=()=>{allL=!allL;showInfo()};
+}
+function toast(h,ms=1300){const t=$('#toast');t.innerHTML=h;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),ms)}
+
+/* =====================================================
+   KUTAA 7: Filachuu, kaameraa, qormaata (quiz)
+   ===================================================== */
+function partBox(id){const b=new T.Box3();cur.parts[id].ms.forEach(m=>b.expandByObject(m));return b}
+function select(id,fly=true){
+ sel=id;applyVis();renderList();showInfo();
+ if(id&&fly){G.updateMatrixWorld(true);const b=partBox(id),c=b.getCenter(new T.Vector3()),sz=b.getSize(new T.Vector3()).length(),dir=camera.position.clone().sub(controls.target).normalize();
+  tw={t:c,p:c.clone().add(dir.multiplyScalar(Math.max(4.5,sz*1.7)))}}
+}
+function pick(id){if(quiz)return answer(id);select(id)}
+function showQuiz(){const q=$('#quiz');if(!quiz){q.classList.remove('show');return}
+ q.innerHTML=`🎯 ${U('where')} <b>${D[cur.name][quiz.id][0][lang]}</b> ?  <small>(${score[0]}/${score[1]})</small>`;q.classList.add('show')}
+function nextQ(){const ids=Object.keys(cur.parts).filter(id=>cur.parts[id].sys!=='skin'&&lay[cur.parts[id].sys]);if(!ids.length)return;quiz={id:ids[Math.random()*ids.length|0]};select(null);showQuiz()}
+function answer(id){score[1]++;if(id===quiz.id){score[0]++;toast(U('ok'))}else toast(`${U('no')}: <b>${D[cur.name][id][0][lang]}</b>`,1600);
+ const right=quiz.id;sel=right;applyVis();setTimeout(()=>{sel=null;nextQ()},1400)}
+$('#quizbtn').onclick=()=>{if(quiz){quiz=null;score=[0,0];showQuiz();select(null)}else nextQ()};
+
+/* kaameraa */
+function dolly(f){const v=camera.position.clone().sub(controls.target).multiplyScalar(f);tw={t:controls.target.clone(),p:controls.target.clone().add(v)}}
+$('#zin').onclick=()=>dolly(.7);$('#zout').onclick=()=>dolly(1.35);$('#home').onclick=()=>{tw={t:cur.home.t.clone(),p:cur.home.p.clone()}};
+$('#fs').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();
+$('#tog').onclick=()=>$('#panel').classList.toggle('open');
+cv.addEventListener('pointerdown',()=>{tw=null});
+cv.addEventListener('wheel',()=>{tw=null},{passive:true});
+
+/* kontrolaalee */
+$('#skinop').oninput=e=>{skinOp=e.target.value/100;$('#sov').textContent=e.target.value;applyVis()};
+$('#ex').oninput=e=>{ex=e.target.value/100;explode()};
+$('#cut').oninput=e=>{const v=e.target.value/100;clip.constant=v===0?999:zr[1]-v*(zr[1]-zr[0])};
+$('#xray').onchange=e=>{xray=e.target.checked;applyVis()};$('#iso').onchange=e=>{iso=e.target.checked;applyVis()};
+$('#beat').onchange=e=>beatOn=e.target.checked;$('#breath').onchange=e=>breathOn=e.target.checked;
+$('#flow').onchange=e=>{flowOn=e.target.checked;applyVis()};$('#rot').onchange=e=>controls.autoRotate=e.target.checked;
+$('#search').oninput=renderList;
+document.querySelectorAll('#langs button').forEach(b=>b.onclick=()=>{lang=+b.dataset.l;try{localStorage.setItem('nhd_l',lang)}catch(e){}renderAll()});
+
+/* tuqaa (click) fi hover */
+const ray=new T.Raycaster(),mv=new T.Vector2();let dn=null,lastHov=0;
+function hit(e){const r=cv.getBoundingClientRect();mv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mv,camera);
+ const hs=ray.intersectObjects(cur.all.filter(m=>m.visible&&m.material.opacity>.12),false);return(hs.find(h=>h.object.userData.sys!=='skin')||hs[0])?.object.userData.id}
+cv.addEventListener('pointerdown',e=>dn={x:e.clientX,y:e.clientY,t:Date.now()});
+cv.addEventListener('pointerup',e=>{if(dn&&Math.hypot(e.clientX-dn.x,e.clientY-dn.y)<6&&Date.now()-dn.t<500){const id=hit(e);id?pick(id):(!quiz&&select(null))}dn=null});
+cv.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse'||e.buttons||Date.now()-lastHov<70)return;lastHov=Date.now();
+ const id=hit(e),t=$('#tip');if(id&&!quiz){t.textContent=D[cur.name][id][0][lang];t.style.display='block';t.style.left=e.clientX+14+'px';t.style.top=e.clientY+14+'px';cv.style.cursor='pointer'}else{t.style.display='none';cv.style.cursor=''}});
+
+/* =====================================================
+   KUTAA 8: Animeeshiinii (loop)
+   ===================================================== */
+const tv=new T.Vector3();
+function loop(ms){
+ requestAnimationFrame(loop);const s=ms/1000;
+ if(tw){controls.target.lerp(tw.t,.08);camera.position.lerp(tw.p,.08);if(camera.position.distanceTo(tw.p)<.05)tw=null}
+ controls.update();
+ const hp=cur.parts.heart,lp=cur.parts.lungs;
+ if(hp){const k=beatOn?1+.12*Math.pow(Math.max(0,Math.sin(s*5.5)),8)+.05*Math.pow(Math.max(0,Math.sin(s*5.5-1)),8):1;hp.ms.forEach(m=>m.scale.copy(m.userData.s0).multiplyScalar(k))}
+ if(lp){const b=breathOn?(Math.sin(s*1.5)*.5+.5):0;lp.ms.forEach(m=>m.scale.set(m.userData.s0.x*(1+.06*b),m.userData.s0.y*(1+.05*b),m.userData.s0.z*(1+.07*b)))}
+ if(flowOn)cur.fp.forEach((f,fi)=>{if(!f.pt.visible)return;const a=f.pt.geometry.attributes.position;let j=0;
+  f.cs.forEach(c=>{for(let i=0;i<14;i++){let u=(s*.1+i/14)%1;if(fi)u=1-u;c.getPoint(u,tv);a.setXYZ(j++,tv.x,tv.y,tv.z)}});a.needsUpdate=true});
+ fr.material.opacity=.55+.3*Math.sin(s*2);fr2.scale.setScalar(1+.04*Math.sin(s*2));
+ renderer.render(scene,camera);
+}
+build('human');requestAnimationFrame(loop);
+</script>
+</body>
+</html>
